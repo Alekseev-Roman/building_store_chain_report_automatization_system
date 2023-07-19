@@ -12,6 +12,7 @@
    или<br />
    `sudo docker compose up`<br />
 5. При помощи web-интерфейса Airflow, перейдя по ссылке [http://localhost:8080](http://localhost:8080), подключиться к БД **internship_3_db** и **internship_sources**, указав одноименные connection ID.<br />
+
 Если все шаги выполнены верно, в списке ДАГов появится ДАГ: **transfer_dag**<br />
 
 ## Описание ДАГа
