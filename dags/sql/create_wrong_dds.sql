@@ -1,9 +1,8 @@
-DROP SCHEMA IF EXISTS wrong_data CASCADE;
-CREATE SCHEMA wrong_data;
+CREATE SCHEMA IF NOT EXISTS wrong_dds;
 
 -- Создание последовательности и сущности brand
 
-CREATE TABLE IF NOT EXISTS wrong_data.brand (
+CREATE TABLE IF NOT EXISTS wrong_dds.brand (
   brand_id VARCHAR(30),
   brand VARCHAR(255),
   comment VARCHAR(255) DEFAULT NULL
@@ -11,7 +10,7 @@ CREATE TABLE IF NOT EXISTS wrong_data.brand (
 
 -- Создание сущности category
 
-CREATE TABLE IF NOT EXISTS wrong_data.category (
+CREATE TABLE IF NOT EXISTS wrong_dds.category (
   category_id VARCHAR(8),
   category_name VARCHAR(255),
   comment VARCHAR(255) DEFAULT NULL
@@ -19,7 +18,7 @@ CREATE TABLE IF NOT EXISTS wrong_data.category (
 
 -- Создание сущности stores
 
-CREATE TABLE IF NOT EXISTS wrong_data.stores (
+CREATE TABLE IF NOT EXISTS wrong_dds.stores (
     pos VARCHAR(12),
     pos_name VARCHAR,
     comment VARCHAR(255) DEFAULT NULL
@@ -27,7 +26,7 @@ CREATE TABLE IF NOT EXISTS wrong_data.stores (
 
 -- Создание сущности product
 
-CREATE TABLE IF NOT EXISTS wrong_data.product (
+CREATE TABLE IF NOT EXISTS wrong_dds.product (
   product_id VARCHAR(12),
   name_short VARCHAR(255),
   category_id VARCHAR(8),
@@ -38,7 +37,7 @@ CREATE TABLE IF NOT EXISTS wrong_data.product (
 
 -- Создание сущности stock
 
-CREATE TABLE IF NOT EXISTS wrong_data.stock (
+CREATE TABLE IF NOT EXISTS wrong_dds.stock (
   available_on VARCHAR(30),
   product_id VARCHAR(12),
   pos VARCHAR(30),
@@ -49,7 +48,7 @@ CREATE TABLE IF NOT EXISTS wrong_data.stock (
 
 -- Создание сущности transaction
 
-CREATE TABLE IF NOT EXISTS wrong_data."transaction" (
+CREATE TABLE IF NOT EXISTS wrong_dds."transaction" (
   transaction_id VARCHAR(18),
   product_id VARCHAR(12),
   recorded_on VARCHAR(30),
@@ -61,7 +60,12 @@ CREATE TABLE IF NOT EXISTS wrong_data."transaction" (
   comment VARCHAR(255) DEFAULT NULL
 );
 
-
+TRUNCATE wrong_dds."transaction" CASCADE;
+TRUNCATE wrong_dds.stock CASCADE;
+TRUNCATE wrong_dds.product CASCADE;
+TRUNCATE wrong_dds.brand CASCADE;
+TRUNCATE wrong_dds.category CASCADE;
+TRUNCATE wrong_dds.stores CASCADE;
 
 
 

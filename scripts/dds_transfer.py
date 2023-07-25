@@ -1,13 +1,13 @@
 import pandas as pd
 import numpy as np
 import datetime
-from airflow.hooks.postgres_hook import PostgresHook
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 
 #   Коррекция brand
 def correct_brand(sources_postgres_hook, dds_postgres_hook):
     brand = sources_postgres_hook.get_pandas_df('SELECT * FROM sources.brand')
-    wrong_brand = dds_postgres_hook.get_pandas_df('SELECT * FROM wrong_data.brand')
+    wrong_brand = dds_postgres_hook.get_pandas_df('SELECT * FROM wrong_dds.brand')
 
     #   Отрицательное или нечисловое значение в brand_id
     buf_brand = brand[brand['brand_id'].str.isdigit()]
@@ -55,7 +55,7 @@ def correct_brand(sources_postgres_hook, dds_postgres_hook):
 #   Коррекция category
 def correct_category(sources_postgres_hook, dds_postgres_hook):
     category = sources_postgres_hook.get_pandas_df('SELECT * FROM sources.category')
-    wrong_category = dds_postgres_hook.get_pandas_df('SELECT * FROM wrong_data.category')
+    wrong_category = dds_postgres_hook.get_pandas_df('SELECT * FROM wrong_dds.category')
 
     #   Пустое значение category_id
     buf_category = category[category['category_id'] != '']
@@ -103,7 +103,7 @@ def correct_category(sources_postgres_hook, dds_postgres_hook):
 #   Коррекция product
 def correct_product(sources_postgres_hook, dds_postgres_hook, brand, category):
     product = sources_postgres_hook.get_pandas_df('SELECT * FROM sources.product')
-    wrong_product = dds_postgres_hook.get_pandas_df('SELECT * FROM wrong_data.product')
+    wrong_product = dds_postgres_hook.get_pandas_df('SELECT * FROM wrong_dds.product')
 
     #   Отрицательное или нечисловое значение в brand_id
     buf_product = product[product['brand_id'].str.isdigit()]
@@ -147,9 +147,7 @@ def correct_product(sources_postgres_hook, dds_postgres_hook, brand, category):
 
     #   Некорректное name_short
     buf_wrong = product[product['name_short'].str.isdigit()]
-    print(buf_wrong)
     buf_product = pd.concat([product, buf_wrong]).drop_duplicates(keep=False)
-    print(buf_product)
     wrong_product = pd.concat([wrong_product, buf_wrong])
     wrong_product.loc[wrong_product['comment'].isnull(), 'comment'] = \
         'Некорректное name_short'
@@ -193,7 +191,7 @@ def correct_product(sources_postgres_hook, dds_postgres_hook, brand, category):
 #   Коррекция stock
 def correct_stock(sources_postgres_hook, dds_postgres_hook, product, stores):
     stock = sources_postgres_hook.get_pandas_df('SELECT * FROM sources.stock')
-    wrong_stock = dds_postgres_hook.get_pandas_df('SELECT * FROM wrong_data.stock')
+    wrong_stock = dds_postgres_hook.get_pandas_df('SELECT * FROM wrong_dds.stock')
 
     #   Отрицательное или нечисловое значение в available_quantity
     buf_stock = stock[stock['available_quantity'].str.replace('.', '', 1).str.isdigit()]
@@ -283,7 +281,7 @@ def correct_stock(sources_postgres_hook, dds_postgres_hook, product, stores):
 
 #   Коррекция transaction
 def correct_transaction(dds_postgres_hook, transaction, product, stores):
-    wrong_transaction = dds_postgres_hook.get_pandas_df('SELECT * FROM wrong_data."transaction"')
+    wrong_transaction = dds_postgres_hook.get_pandas_df('SELECT * FROM wrong_dds."transaction"')
 
     #   Отрицательное или нечисловое значение в quantity
     buf_transaction = transaction[transaction['quantity'].str.replace('.', '', 1).str.isdigit()]
@@ -386,7 +384,7 @@ def dds_transfer():
 
     #   Загрузка данных из файлов
     transaction_stores = pd.read_csv(
-        'dags/csv/transactions-stores.csv', sep=';', encoding='CP1251'
+        '/opt/airflow/dags/csv/transactions-stores.csv', sep=';', encoding='CP1251'
     ).set_index('transaction_id')
 
     #   Запросы на получение данных
@@ -410,9 +408,12 @@ def dds_transfer():
     transaction.to_sql('transaction', dds_engine, if_exists='append', schema='dds', index=False)
 
     #   Сохранение некорректных данных
-    wrong_brand.to_sql('brand', dds_engine, if_exists='append', schema='wrong_data', index=False)
-    wrong_category.to_sql('category', dds_engine, if_exists='append', schema='wrong_data', index=False)
-    wrong_product.to_sql('product', dds_engine, if_exists='append', schema='wrong_data', index=False)
-    wrong_stock.to_sql('stock', dds_engine, if_exists='append', schema='wrong_data', index=False)
-    wrong_transaction.to_sql('transaction', dds_engine, if_exists='append', schema='wrong_data', index=False)
+    wrong_brand.to_sql('brand', dds_engine, if_exists='append', schema='wrong_dds', index=False)
+    wrong_category.to_sql('category', dds_engine, if_exists='append', schema='wrong_dds', index=False)
+    wrong_product.to_sql('product', dds_engine, if_exists='append', schema='wrong_dds', index=False)
+    wrong_stock.to_sql('stock', dds_engine, if_exists='append', schema='wrong_dds', index=False)
+    wrong_transaction.to_sql('transaction', dds_engine, if_exists='append', schema='wrong_dds', index=False)
 
+
+if __name__ == '__main__':
+    dds_transfer()

@@ -1,11 +1,9 @@
---DROP SCHEMA IF EXISTS dds CASCADE;
-
 CREATE SCHEMA IF NOT EXISTS dds;
 
 -- Создание и заполнение сущности stores
 
 CREATE TABLE IF NOT EXISTS dds.stores (
-    pos VARCHAR(12) PRIMARY KEY NOT NULL,
+    pos VARCHAR(12) PRIMARY KEY,
     pos_name VARCHAR(50)
 );
 
@@ -21,27 +19,24 @@ VALUES ('Магазин 1', 'СтройТорг Первый'),
        ('Магазин 10', 'СтройТорг на Невском')
 ON CONFLICT DO NOTHING;
 
--- Создание последовательности и сущности brand
-
-DROP SEQUENCE IF EXISTS brand_id_seq CASCADE;
-CREATE SEQUENCE brand_id_seq START 1000;
+-- Создание сущности brand
 
 CREATE TABLE IF NOT EXISTS dds.brand (
-  brand_id INT default nextval('brand_id_seq') PRIMARY KEY NOT NULL,
+  brand_id INT PRIMARY KEY,
   brand VARCHAR(255) NOT NULL
 );
 
 -- Создание сущности category
 
 CREATE TABLE IF NOT EXISTS dds.category (
-  category_id VARCHAR(8) PRIMARY KEY NOT NULL,
+  category_id VARCHAR(8) PRIMARY KEY,
   category_name VARCHAR(255) NOT NULL
 );
 
 -- Создание сущности product
 
 CREATE TABLE IF NOT EXISTS dds.product (
-  product_id VARCHAR(12) PRIMARY KEY NOT NULL,
+  product_id VARCHAR(12) PRIMARY KEY,
   name_short VARCHAR(255) NOT NULL,
   category_id VARCHAR(8) NOT NULL,
   pricing_line_id VARCHAR(12),
@@ -53,9 +48,9 @@ CREATE TABLE IF NOT EXISTS dds.product (
 -- Создание сущности stock
 
 CREATE TABLE IF NOT EXISTS dds.stock (
-  available_on DATE NOT NULL,
-  product_id VARCHAR(12) NOT NULL,
-  pos VARCHAR(30) NOT NULL,
+  available_on DATE,
+  product_id VARCHAR(12),
+  pos VARCHAR(30),
   available_quantity NUMERIC NOT NULL,
   cost_per_item NUMERIC NOT NULL,
   PRIMARY KEY (available_on, product_id, pos),
@@ -66,9 +61,9 @@ CREATE TABLE IF NOT EXISTS dds.stock (
 -- Создание сущности transaction
 
 CREATE TABLE IF NOT EXISTS dds."transaction" (
-  transaction_id VARCHAR(18) NOT NULL,
-  product_id VARCHAR(12) NOT NULL,
-  recorded_on TIMESTAMP NOT NULL,
+  transaction_id VARCHAR(18),
+  product_id VARCHAR(12),
+  recorded_on TIMESTAMP,
   quantity NUMERIC NOT NULL,
   price NUMERIC NOT NULL,
   price_full NUMERIC NOT NULL,
@@ -79,9 +74,9 @@ CREATE TABLE IF NOT EXISTS dds."transaction" (
   FOREIGN KEY (pos) REFERENCES dds.stores (pos)
 );
 
-DELETE FROM  dds."transaction" CASCADE;
-DELETE FROM  dds.stock CASCADE;
-DELETE FROM  dds.product CASCADE;
-DELETE FROM  dds.brand CASCADE;
-DELETE FROM  dds.category CASCADE;
+TRUNCATE dds."transaction" CASCADE;
+TRUNCATE dds.stock CASCADE;
+TRUNCATE dds.product CASCADE;
+TRUNCATE dds.brand CASCADE;
+TRUNCATE dds.category CASCADE;
 
