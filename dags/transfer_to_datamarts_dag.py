@@ -4,7 +4,7 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.postgres_operator import PostgresOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 
-# wait_for_dinner = ExternalTaskSensor(
+# wait_for_transfer_to_dds = ExternalTaskSensor(
 #     task_id='wait_for_transfer_to_dds',
 #     external_dag_id='transfer_to_dds_dag'
 # )
@@ -12,8 +12,8 @@ from airflow.sensors.external_task import ExternalTaskSensor
 with DAG(
         dag_id='transfer_to_datamarts_dag',
         description='transfer_data_to_datamarts',
-        schedule='@once',
         start_date=datetime.datetime(2023, 7, 12),
+        schedule_interval='0 4 * * MON',
         catchup=False
 ) as dag:
     clean_step = PostgresOperator(
@@ -33,6 +33,6 @@ with DAG(
         bash_command='python ${AIRFLOW_HOME}/scripts/datamarts_transfer.py'
     )
 
-    # wait_for_dinner >> clean_step >> create_wrong_step >> extract_data_step
+    # wait_for_transfer_to_dds >> clean_step >> create_wrong_step >> extract_data_step
     clean_step >> create_wrong_step >> extract_data_step
 

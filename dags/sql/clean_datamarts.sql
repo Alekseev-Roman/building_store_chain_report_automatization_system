@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS datamarts."transaction"(
     product_name VARCHAR(255) NOT NULL,
     pos_name VARCHAR(255) NOT NULL,
     category_name VARCHAR(255) NOT NULL,
+    brand VARCHAR(255) NOT NULL,
     profit NUMERIC,
     update_date TIMESTAMP,
     tech_valid_from TIMESTAMP,
@@ -36,10 +37,5 @@ CREATE TABLE IF NOT EXISTS datamarts."order"(
     PRIMARY KEY (available_on, product_name, pos_name)
 );
 
--- Создание сущности logs
-
-CREATE TABLE IF NOT EXISTS datamarts.logs(
-);
 
 TRUNCATE datamarts."transaction";
-TRUNCATE datamarts.logs;

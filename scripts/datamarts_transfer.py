@@ -6,44 +6,39 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 #   Обработка данных по заказам
 def produce_transactions(dds_postgres_hook, update_data):
-    #   Запросы на получение данных
-    stores = dds_postgres_hook.get_pandas_df('SELECT * FROM dds.stores').set_index('pos')
-    transaction = dds_postgres_hook.get_pandas_df('SELECT * FROM dds."transaction"')
-    brand = dds_postgres_hook.get_pandas_df('SELECT * FROM dds.brand').set_index('brand_id')
-    category = dds_postgres_hook.get_pandas_df('SELECT * FROM dds.category').set_index('category_id')
-    product = dds_postgres_hook.get_pandas_df('SELECT * FROM dds.product')
-    stock = dds_postgres_hook.get_pandas_df('SELECT product_id, cost_per_item FROM dds.stock')
-    wrong_datamart = dds_postgres_hook.get_pandas_df('SELECT * FROM wrong_datamarts.datamart')
-
     #   Время начала обработки
     start_time = datetime.datetime.now()
 
-    transaction = transaction.join(stores, on='pos', how='left')
-    product = product.join(category, on='category_id', how='left').set_index('product_id')
-    stock = stock.drop_duplicates(subset='product_id')
-    stock = stock[stock['cost_per_item'].notnull()]
-    stock = stock.set_index('product_id')
-    product = product.join(stock, on='product_id', how='left')
-    transaction = transaction.join(product, on='product_id', how='left')
-    transaction = transaction.join(brand, on='brand_id', how='left')
-    transaction = transaction.assign(product_name=transaction['name_short'] + ' ' + transaction['brand'])
-    transaction = transaction.assign(profit=transaction['price'] - transaction['cost_per_item'])
+    #   Запросы на получение данных
+    transaction = dds_postgres_hook.get_pandas_df('''
+        SELECT DISTINCT dds."transaction".transaction_id, dds."transaction".product_id, dds."transaction".recorded_on, 
+        dds."transaction".quantity, dds."transaction".price, dds."transaction".price_full, dds.brand.brand,
+        dds."transaction".order_type_id, CONCAT(dds.product.name_short, ' ', dds.brand.brand) AS product_name, 
+        dds.stores.pos_name, dds.category.category_name, price - cost_per_item AS profit
+        FROM dds."transaction"
+            LEFT JOIN dds.stores ON dds."transaction".pos = dds.stores.pos
+            LEFT JOIN dds.product ON dds."transaction".product_id = dds.product.product_id
+            LEFT JOIN dds.brand ON dds.product.brand_id = dds.brand.brand_id
+            LEFT JOIN dds.category ON dds.category.category_id = dds.product.category_id
+            LEFT JOIN (
+                SELECT dds.stock.product_id, dds.stock.cost_per_item
+                FROM dds.stock
+                GROUP BY product_id, cost_per_item
+            ) AS stock ON stock.product_id = dds."transaction".product_id
+        WHERE dds."transaction".order_type_id = 'BUY'
+        ''')
+
+    transaction = transaction.drop_duplicates(subset=['transaction_id', 'product_id', 'recorded_on'])
+
+    wrong_datamart = dds_postgres_hook.get_pandas_df('SELECT * FROM wrong_datamarts.datamart')
+
     transaction = transaction.assign(
         update_date=update_data, tech_valid_from=start_time, tech_valid_to=datetime.datetime.now()
     )
 
-    transaction = transaction[transaction['order_type_id'] == 'BUY']
-
-    # Удаление записей, которые не содержат cost_per_item
-    buf_transaction = transaction[transaction['profit'].notnull()]
-    buf_wrong = pd.concat([transaction, buf_transaction]).drop_duplicates(keep=False)
-    wrong_datamart = pd.concat([wrong_datamart, buf_wrong])
-    wrong_datamart.loc[wrong_datamart['comment'].isnull(), 'comment'] = 'Отсутствует cost_per_item'
-    transaction = buf_transaction
-
-    return transaction[['transaction_id', 'product_id', 'recorded_on', 'quantity', 'price', 'price_full',
-                        'order_type_id', 'product_name', 'pos_name', 'category_name', 'profit', 'update_date',
-                        'tech_valid_from', 'tech_valid_to']], \
+    return transaction[['transaction_id', 'product_id', 'recorded_on', 'quantity', 'price', 'price_full', 'brand',
+                        'order_type_id', 'product_name', 'pos_name', 'category_name', 'profit',
+                        'update_date', 'tech_valid_from', 'tech_valid_to']], \
         wrong_datamart[['transaction_id', 'product_id', 'recorded_on', 'quantity', 'price', 'price_full',
                         'order_type_id', 'product_name', 'pos_name', 'category_name', 'profit', 'comment',
                         'update_date', 'tech_valid_from', 'tech_valid_to']]
@@ -99,6 +94,7 @@ def datamart_transfer():
     transaction_datamart.to_sql('transaction', dds_engine, if_exists='append', schema='datamarts', index=False)
     wrong_datamart.to_sql('datamart', dds_engine, if_exists='append', schema='wrong_datamarts', index=False)
     order_datamart.to_sql('order', dds_engine, if_exists='replace', schema='datamarts', index=False)
+
 
 
 if __name__ == '__main__':

@@ -7,8 +7,8 @@ from airflow.operators.postgres_operator import PostgresOperator
 with DAG(
         dag_id='transfer_to_dds_dag',
         description='transfer_data_to_dds',
-        schedule='@once',
         start_date=datetime.datetime(2023, 7, 12),
+        schedule_interval='0 3 * * MON',
         catchup=False
 ) as dag:
     clean_step = PostgresOperator(
