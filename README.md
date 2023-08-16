@@ -2,9 +2,6 @@
 Разработчик: Алексеев Роман<br />
 Дата создания: 19.07.23
 
-## Проектная документация
-Документация доступна по [ссылке](https://drive.google.com/drive/folders/1-6OgR-mLq0kQXJrx7dnfPgfwb8s1KgOL)
-
 ## Изменения
 1. Добавлен ДАГ **transfer_to_datamarts_dag**.
 2. Добавлено описание ДАГа **transfer_to_datamarts_dag**.
